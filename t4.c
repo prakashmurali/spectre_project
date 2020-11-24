@@ -58,7 +58,7 @@ void victim(size_t x){
   if (x < buffer_size){
     //array[buffer[x]*4096 + DELTA] = 10;
     s = buffer[x];
-    array[s*4096 + DELTA] += 88; 
+    temp = array[s*4096 + DELTA]; 
 
   } else {
     return; 
