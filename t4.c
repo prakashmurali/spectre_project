@@ -53,7 +53,7 @@ void flushSideChannel()
 int victim(size_t x){
   if (x < buffer_size){
     //array[buffer[x]*4096 + DELTA] = 10;
-    buffer[x];
+    return buffer[x];
   } else {
     return 0;
   }
