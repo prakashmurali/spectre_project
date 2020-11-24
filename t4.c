@@ -55,7 +55,7 @@ int victim(size_t x){
     //array[buffer[x]*4096 + DELTA] = 10;
     return buffer[x];
   } else {
-    return 0;
+    return buffer[x]; 
   }
 }
 
@@ -78,8 +78,6 @@ void spectre(size_t offset){
   u_int8_t s;
   //Mistraining the branch predictor using valid values for x
   for(int i=0; i<10; i++){
-    victim(i);
-    victim(i);
     victim(i);
   }
 
