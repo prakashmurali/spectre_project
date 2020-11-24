@@ -79,6 +79,8 @@ void spectre(size_t offset){
   //Mistraining the branch predictor using valid values for x
   for(int i=0; i<10; i++){
     victim(i);
+    victim(i);
+    victim(i);
   }
 
   flush(&buffer_size);
