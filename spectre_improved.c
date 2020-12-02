@@ -113,8 +113,9 @@ int main(int argc, const char**argv){
   size_t secret_offset = (size_t)(secret - (char*)buffer);
   printf("Fixed period = 6\n");
   period = 6;
-  for(int i=1; i<=100; i++){ // length of secret is known
+  for(int i=0; i<=100; i+=5){ // length of secret is known
     attack_times = i;
+    printf("Attack Times :%d, ", i);
     spectre(secret_offset);
   }
 /*  printf("Fixed Attack_times = 5\n");
