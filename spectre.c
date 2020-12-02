@@ -62,7 +62,7 @@ void spectre(size_t offset){
 	}
 
 	int j;
-	for (int trial_idx = 0; trial_idx < 1000; trial_idx++) {
+	for (int trial_idx = 0; trial_idx < 10000; trial_idx++) {
 		flushSideChannel();
 		training_x = trial_idx % buffer_size;
 
