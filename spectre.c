@@ -9,8 +9,8 @@
 volatile uint64_t counter = 0;
 // unsigned int buffer_size = 16;
 // u_int8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-unsigned int buffer_size = 8;
-u_int8_t buffer[8] = {0,1,2,3,4,5,6,7};
+unsigned int buffer_size = 4;
+u_int8_t buffer[8] = {0,1,2,3};
 u_int8_t array[256*4096];
 char*secret = "This is a secret string";
 u_int8_t temp = 0;
