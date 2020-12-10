@@ -94,7 +94,7 @@ void spectre(size_t offset){
 			max_value = results[i];
 			max_char = i;
 		}*/
-		printf("%d, "results[i])
+		printf("%d, ", results[i]);
 	}
 	//printf("Max. character = (%c, %d) \n", max_char, max_value);
 }
