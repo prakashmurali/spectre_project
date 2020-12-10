@@ -53,6 +53,7 @@ void victim()
   temp = array[secret*4096 + DELTA];
 }
 
+u_int64_t time_aver[256];
 void reloadSideChannel(int thresh){
   int junk=0;
   register u_int64_t time;
@@ -60,10 +61,11 @@ void reloadSideChannel(int thresh){
   int i;
   for(i = 0; i < 256; i++){
     time = timed_read(&array[i*4096 + DELTA]);
-    if (time <= thresh){
+    time_aver[i] += time;
+    /*if (time <= thresh){
       printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
       printf("The Secret = %d.\n",i);
-    }
+    }*/
   }
 }
 
@@ -76,9 +78,13 @@ int main(int argc, const char**argv){
 	}
 	while (counter < 10000000);
 	asm volatile ("DSB SY");
-
-  flushSideChannel();
-  victim();
-  reloadSideChannel(thresh);
+  for(int i = 0; i < 20; i++){
+    flushSideChannel();
+    victim();
+    reloadSideChannel(thresh);
+  }
+  for(int i = 0; i < 256; i++){
+    printf("%f, ", 1.0* time_aver[256] / 20);
+  }
   return (0);
 }
