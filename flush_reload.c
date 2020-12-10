@@ -84,7 +84,7 @@ int main(int argc, const char**argv){
     reloadSideChannel(thresh);
   }
   for(int i = 0; i < 256; i++){
-    printf("%f, ", 1.0* time_aver[256] / 20);
+    printf("%f, ", 1.0* time_aver[i] / 20);
   }
   return (0);
 }
